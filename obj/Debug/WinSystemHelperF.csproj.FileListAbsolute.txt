@@ -1,0 +1,11 @@
+C:\Users\Microsoft\Desktop\Devops\WinSystemHelperF\bin\Debug\WinSystemHelperF.exe.config
+C:\Users\Microsoft\Desktop\Devops\WinSystemHelperF\bin\Debug\WinSystemHelperF.exe
+C:\Users\Microsoft\Desktop\Devops\WinSystemHelperF\bin\Debug\WinSystemHelperF.pdb
+C:\Users\Microsoft\Desktop\Devops\WinSystemHelperF\obj\Debug\WinSystemHelperF.csproj.AssemblyReference.cache
+C:\Users\Microsoft\Desktop\Devops\WinSystemHelperF\obj\Debug\WinSystemHelperF.Form1.resources
+C:\Users\Microsoft\Desktop\Devops\WinSystemHelperF\obj\Debug\WinSystemHelperF.Properties.Resources.resources
+C:\Users\Microsoft\Desktop\Devops\WinSystemHelperF\obj\Debug\WinSystemHelperF.csproj.GenerateResource.cache
+C:\Users\Microsoft\Desktop\Devops\WinSystemHelperF\obj\Debug\WinSystemHelperF.csproj.CoreCompileInputs.cache
+C:\Users\Microsoft\Desktop\Devops\WinSystemHelperF\obj\Debug\WinSystemHelperF.exe
+C:\Users\Microsoft\Desktop\Devops\WinSystemHelperF\obj\Debug\WinSystemHelperF.pdb
+C:\Users\Microsoft\Desktop\Devops\WinSystemHelperF\obj\Debug\WinSystemHelperF.exe.config
