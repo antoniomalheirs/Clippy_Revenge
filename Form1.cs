@@ -42,7 +42,7 @@ namespace WinSystemHelperF
 
         public Form1()
         {
-            File.WriteAllText(logPath, ""); // Limpa o log antigo
+            ///File.WriteAllText(logPath, ""); // Limpa o log antigo
             Log("Construtor - Início");
 
             // PASSO 1: Definir propriedades que não precisam de um "handle" de janela
@@ -150,6 +150,11 @@ namespace WinSystemHelperF
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
             UnregisterHotKey(this.Handle, HOTKEY_ID);
+        }
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+
         }
     }
 }

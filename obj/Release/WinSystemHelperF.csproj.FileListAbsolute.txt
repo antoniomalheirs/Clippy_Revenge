@@ -1,0 +1,10 @@
+C:\Users\Microsoft\Desktop\Devops\Nova pasta\bin\Release\WinSystemHelperF.exe.config
+C:\Users\Microsoft\Desktop\Devops\Nova pasta\bin\Release\WinSystemHelperF.exe
+C:\Users\Microsoft\Desktop\Devops\Nova pasta\bin\Release\WinSystemHelperF.pdb
+C:\Users\Microsoft\Desktop\Devops\Nova pasta\obj\Release\WinSystemHelperF.csproj.AssemblyReference.cache
+C:\Users\Microsoft\Desktop\Devops\Nova pasta\obj\Release\WinSystemHelperF.Form1.resources
+C:\Users\Microsoft\Desktop\Devops\Nova pasta\obj\Release\WinSystemHelperF.Properties.Resources.resources
+C:\Users\Microsoft\Desktop\Devops\Nova pasta\obj\Release\WinSystemHelperF.csproj.GenerateResource.cache
+C:\Users\Microsoft\Desktop\Devops\Nova pasta\obj\Release\WinSystemHelperF.csproj.CoreCompileInputs.cache
+C:\Users\Microsoft\Desktop\Devops\Nova pasta\obj\Release\WinSystemHelperF.exe
+C:\Users\Microsoft\Desktop\Devops\Nova pasta\obj\Release\WinSystemHelperF.pdb
