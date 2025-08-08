@@ -1,4 +1,6 @@
-﻿namespace WinSystemHelperF
+﻿using System;
+
+namespace WinSystemHelperF
 {
     partial class Form1
     {
@@ -45,6 +47,17 @@
             this.TopMost = true;
             this.Load += new System.EventHandler(this.Form1_Load);
             this.ResumeLayout(false);
+
+        }
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+
+
+
+
+
+
 
         }
 

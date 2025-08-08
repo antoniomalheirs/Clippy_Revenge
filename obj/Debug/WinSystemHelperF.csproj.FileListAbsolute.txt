@@ -19,3 +19,5 @@ C:\Users\Microsoft\Desktop\Devops\Nova pasta\obj\Debug\WinSystemHelperF.csproj.G
 C:\Users\Microsoft\Desktop\Devops\Nova pasta\obj\Debug\WinSystemHelperF.csproj.CoreCompileInputs.cache
 C:\Users\Microsoft\Desktop\Devops\Nova pasta\obj\Debug\WinSystemHelperF.exe
 C:\Users\Microsoft\Desktop\Devops\Nova pasta\obj\Debug\WinSystemHelperF.pdb
+C:\Users\Microsoft\Desktop\Devops\Nova pasta\obj\Debug\WinSystemHelperF.exe.config
+C:\Users\Microsoft\Desktop\Devops\Nova pasta\obj\Debug\WinSystemHelperF.ClippyControl.resources

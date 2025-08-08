@@ -1,32 +1,51 @@
-﻿// Ficheiro: Program.cs
-using System;
+﻿using System;
 using System.Windows.Forms;
-using WinSystemHelperF;
 
-static class Program
+namespace WinSystemHelperF
 {
-    [STAThread]
-    static void Main()
+    static class Program
     {
-        Application.EnableVisualStyles();
-        Application.SetCompatibleTextRenderingDefault(false);
-
-        // Em vez de Application.Run(new Form1()),
-        // usamos um ApplicationContext personalizado.
-        Application.Run(new StealthAppContext());
+        [STAThread]
+        static void Main()
+        {
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+            // Inicia a aplicação com o nosso contexto, e não diretamente com o Form1
+            Application.Run(new StealthAppContext());
+        }
     }
-}
 
-// Classe ApplicationContext personalizada
-public class StealthAppContext : ApplicationContext
-{
-    private Form1 overlayForm;
-
-    public StealthAppContext()
+    // O gestor de ciclo de vida da nossa aplicação
+    public class StealthAppContext : ApplicationContext
     {
-        // Cria o nosso formulário de sobreposição.
-        // O formulário irá configurar-se no seu evento Load.
-        overlayForm = new Form1();
-        overlayForm.Show(); // Mostra o formulário, que será invisível e sem foco
+        private Form1 overlayForm;
+
+        public StealthAppContext()
+        {
+            ShowOverlayForm();
+        }
+
+        private void ShowOverlayForm()
+        {
+            overlayForm = new Form1();
+            // Dizemos ao contexto para "ouvir" quando o formulário for fechado
+            overlayForm.FormClosed += OnFormClosed;
+            overlayForm.Show();
+        }
+
+        // Este método é chamado quando a janela Form1 é fechada
+        private void OnFormClosed(object sender, FormClosedEventArgs e)
+        {
+            // Em vez de fechar a aplicação, esperamos 10 segundos e recriamos o formulário
+            var respawnTimer = new Timer();
+            respawnTimer.Interval = 10000;
+            respawnTimer.Tick += (s, args) =>
+            {
+                ShowOverlayForm();
+                respawnTimer.Stop();
+                respawnTimer.Dispose();
+            };
+            respawnTimer.Start();
+        }
     }
 }
