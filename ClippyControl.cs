@@ -6,11 +6,9 @@ namespace WinSystemHelperF
 {
     public partial class ClippyControl : UserControl
     {
-        // Estados da animação
         private enum ClippyState { Hidden, Entering, Wandering, Exiting }
         private ClippyState currentState = ClippyState.Hidden;
 
-        // Componentes da animação
         private Timer animationTimer = new Timer();
         private Random random = new Random();
         private PointF currentPosition;
@@ -18,11 +16,8 @@ namespace WinSystemHelperF
         private Point entryPoint;
         private float speed = 5f;
         private int wanderCount = 0;
+        private bool isCursorTrapped = false;
 
-        // --- LÓGICA DE CAPTURA DO CURSOR ---
-        private bool isCursorTrapped = false; // Flag que controla a armadilha
-
-        // Imagens para a inversão do sprite
         private Image imageRight;
         private Image imageLeft;
         private bool isFacingRight = true;
@@ -52,13 +47,17 @@ namespace WinSystemHelperF
 
             animationTimer.Interval = 30;
             animationTimer.Tick += OnAnimationTick;
+
+            // --- CORREÇÃO: Usar o evento MouseDown em vez de MouseDoubleClick ---
+            this.MouseDown += OnClippyMouseDown;
+            pnlBubble.MouseDown += OnClippyMouseDown;
+            picClippy.MouseDown += OnClippyMouseDown;
+            lblMessage.MouseDown += OnClippyMouseDown;
         }
 
-        // Método principal para iniciar a animação
         public void StartAnimation(string message)
         {
             if (currentState != ClippyState.Hidden) return;
-
             lblMessage.Text = message;
             PlanNewPath();
             this.Location = new Point((int)currentPosition.X, (int)currentPosition.Y);
@@ -68,27 +67,29 @@ namespace WinSystemHelperF
             animationTimer.Start();
         }
 
-        // O "game loop" que move o personagem
+        // --- NOVO MÉTODO: Deteta o duplo clique dentro do MouseDown ---
+        private void OnClippyMouseDown(object sender, MouseEventArgs e)
+        {
+            // A propriedade e.Clicks diz-nos se foi um clique simples (1) ou duplo (2)
+            if (e.Clicks >= 1)
+            {
+                // A armadilha só é ativada se o personagem estiver a passear
+                if (currentState == ClippyState.Wandering)
+                {
+                    isCursorTrapped = true;
+                    currentState = ClippyState.Exiting;
+                    targetPosition = entryPoint;
+                }
+            }
+        }
+
         private void OnAnimationTick(object sender, EventArgs e)
         {
-            // --- NOVA LÓGICA DE CAPTURA POR PROXIMIDADE ---
-            // Verifica se o rato passou por cima, mas apenas se estiver a passear
-            Rectangle controlBoundsOnScreen = this.RectangleToScreen(this.ClientRectangle);
-            if (currentState == ClippyState.Wandering && controlBoundsOnScreen.Contains(Cursor.Position))
-            {
-                // Ativa a armadilha e inicia a fuga!
-                isCursorTrapped = true;
-                currentState = ClippyState.Exiting;
-                targetPosition = entryPoint;
-            }
-
-            // Se a armadilha estiver ativa, prende o cursor
             if (isCursorTrapped)
             {
                 ProcessCursorTrap();
             }
 
-            // Lógica de Movimento
             float dx = targetPosition.X - currentPosition.X;
             float dy = targetPosition.Y - currentPosition.Y;
             float distance = (float)Math.Sqrt(dx * dx + dy * dy);
@@ -108,12 +109,10 @@ namespace WinSystemHelperF
             this.Location = new Point((int)currentPosition.X, (int)currentPosition.Y);
         }
 
-        // Decide o que fazer quando chega a um ponto de destino
         private void ProcessTargetReached()
         {
             var screen = Screen.FromControl(this.Parent).Bounds;
             currentPosition = targetPosition;
-
             switch (currentState)
             {
                 case ClippyState.Entering:
@@ -121,10 +120,9 @@ namespace WinSystemHelperF
                     wanderCount = 0;
                     targetPosition = new Point(random.Next(50, screen.Width - this.Width - 50), random.Next(50, screen.Height - this.Height - 50));
                     break;
-
                 case ClippyState.Wandering:
                     wanderCount++;
-                    if (wanderCount >= 3)
+                    if (wanderCount >= 5)
                     {
                         currentState = ClippyState.Exiting;
                         targetPosition = entryPoint;
@@ -134,10 +132,9 @@ namespace WinSystemHelperF
                         targetPosition = new Point(random.Next(50, screen.Width - this.Width - 50), random.Next(50, screen.Height - this.Height - 50));
                     }
                     break;
-
-                    // Ao chegar ao destino de saída, desliga tudo e liberta o rato
                 case ClippyState.Exiting:
-                    isCursorTrapped = false; // <-- LIBERTA O CURSOR
+                    
+                    isCursorTrapped = false;
                     currentState = ClippyState.Hidden;
                     this.Visible = false;
                     animationTimer.Stop();
@@ -145,52 +142,47 @@ namespace WinSystemHelperF
             }
         }
 
-        // --- NOVO MÉTODO PARA PRENDER O CURSOR ---
         private void ProcessCursorTrap()
         {
-            // Prende o cursor ao centro do pnlBubble (o personagem)
             Cursor.Position = new Point(this.Left + pnlBubble.Left + pnlBubble.Width / 2, this.Top + pnlBubble.Top + pnlBubble.Height / 2);
         }
 
-        // Atualiza a imagem (esquerda/direita) e a posição do balão
         private void UpdateSpriteDirection(float dx)
         {
             if (imageRight == null || imageLeft == null) return;
-
             if (dx > 0.1 && !isFacingRight)
             {
                 isFacingRight = true;
                 pnlBubble.BackgroundImage = imageRight;
-                picClippy.Left = pnlBubble.Left - picClippy.Width + 40;
+                picClippy.Left = pnlBubble.Left - picClippy.Width + 160;
             }
             else if (dx < -0.1 && isFacingRight)
             {
                 isFacingRight = false;
                 pnlBubble.BackgroundImage = imageLeft;
-                picClippy.Left = pnlBubble.Right - 40;
+                picClippy.Left = pnlBubble.Right - 160;
             }
         }
 
-        // Escolhe um ponto de entrada/saída aleatório
         private void PlanNewPath()
         {
             int edge = random.Next(4);
             var screen = Screen.FromControl(this.Parent).Bounds;
             switch (edge)
             {
-                case 0: // Cima
+                case 0:
                     entryPoint = new Point(random.Next(0, screen.Width - this.Width), -this.Height);
                     targetPosition = new Point(entryPoint.X, 10);
                     break;
-                case 1: // Direita
+                case 1:
                     entryPoint = new Point(screen.Width, random.Next(0, screen.Height - this.Height));
                     targetPosition = new Point(screen.Width - this.Width - 10, entryPoint.Y);
                     break;
-                case 2: // Baixo
+                case 2:
                     entryPoint = new Point(random.Next(0, screen.Width - this.Width), screen.Height);
                     targetPosition = new Point(entryPoint.X, screen.Height - this.Height - 10);
                     break;
-                case 3: // Esquerda
+                case 3:
                     entryPoint = new Point(-this.Width, random.Next(0, screen.Height - this.Height));
                     targetPosition = new Point(10, entryPoint.Y);
                     break;

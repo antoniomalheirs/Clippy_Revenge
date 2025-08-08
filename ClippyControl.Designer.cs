@@ -40,7 +40,7 @@
             // 
             this.pnlBubble.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("pnlBubble.BackgroundImage")));
             this.pnlBubble.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
-            this.pnlBubble.Location = new System.Drawing.Point(37, 78);
+            this.pnlBubble.Location = new System.Drawing.Point(149, 91);
             this.pnlBubble.Name = "pnlBubble";
             this.pnlBubble.Size = new System.Drawing.Size(150, 87);
             this.pnlBubble.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
@@ -50,7 +50,7 @@
             // picClippy
             // 
             this.picClippy.Controls.Add(this.lblMessage);
-            this.picClippy.Location = new System.Drawing.Point(1, 2);
+            this.picClippy.Location = new System.Drawing.Point(131, 15);
             this.picClippy.Name = "picClippy";
             this.picClippy.Size = new System.Drawing.Size(186, 70);
             this.picClippy.TabIndex = 1;
@@ -74,7 +74,7 @@
             this.Controls.Add(this.picClippy);
             this.Controls.Add(this.pnlBubble);
             this.Name = "ClippyControl";
-            this.Size = new System.Drawing.Size(189, 167);
+            this.Size = new System.Drawing.Size(450, 200);
             ((System.ComponentModel.ISupportInitialize)(this.pnlBubble)).EndInit();
             this.picClippy.ResumeLayout(false);
             this.ResumeLayout(false);

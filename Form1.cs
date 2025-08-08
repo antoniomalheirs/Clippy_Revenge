@@ -105,12 +105,31 @@ namespace WinSystemHelperF
             // Cria a instância do nosso controlo e adiciona-a ao Form1
             clippy = new ClippyControl { Visible = false };
             this.Controls.Add(clippy);
-
+            clippy.VisibleChanged += OnClippyVisibilityChanged;
             // Configura o timer que fará o Clippy aparecer
             clippyAppearanceTimer = new System.Timers.Timer();
             clippyAppearanceTimer.Interval = random.Next(30000, 90000); // Aparece entre 30s e 1.5min
             clippyAppearanceTimer.Elapsed += OnClippyAppearanceElapsed;
             clippyAppearanceTimer.Start();
+        }
+
+        private void OnClippyVisibilityChanged(object sender, EventArgs e)
+        {
+            // Obtém o estilo atual da janela Form1
+            int currentStyle = GetWindowLong(this.Handle, GWL_EXSTYLE);
+
+            if (clippy.Visible)
+            {
+                // Se o Clippy ficou VISÍVEL, REMOVEMOS o estilo "clicável através" do Form1.
+                // O Form1 agora pode receber cliques, e passá-los para o Clippy.
+                SetWindowLong(this.Handle, GWL_EXSTYLE, currentStyle & ~WS_EX_TRANSPARENT);
+            }
+            else
+            {
+                // Se o Clippy ficou INVISÍVEL, READICIONAMOS o estilo "clicável através" ao Form1.
+                // O Form1 volta a ser um "fantasma".
+                SetWindowLong(this.Handle, GWL_EXSTYLE, currentStyle | WS_EX_TRANSPARENT);
+            }
         }
 
         private void OnClippyAppearanceElapsed(object sender, System.Timers.ElapsedEventArgs e)
