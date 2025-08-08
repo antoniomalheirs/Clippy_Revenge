@@ -33,6 +33,7 @@ namespace WinSystemHelperF
                           true);
 
             this.BackColor = Color.Magenta;
+            //this.TransparencyKey = Color.Magenta;
 
             pnlBubble.BackColor = Color.Transparent;
             picClippy.BackColor = Color.Transparent;
@@ -48,7 +49,6 @@ namespace WinSystemHelperF
             animationTimer.Interval = 30;
             animationTimer.Tick += OnAnimationTick;
 
-            // --- CORREÇÃO: Usar o evento MouseDown em vez de MouseDoubleClick ---
             this.MouseDown += OnClippyMouseDown;
             pnlBubble.MouseDown += OnClippyMouseDown;
             picClippy.MouseDown += OnClippyMouseDown;
@@ -67,19 +67,13 @@ namespace WinSystemHelperF
             animationTimer.Start();
         }
 
-        // --- NOVO MÉTODO: Deteta o duplo clique dentro do MouseDown ---
         private void OnClippyMouseDown(object sender, MouseEventArgs e)
         {
-            // A propriedade e.Clicks diz-nos se foi um clique simples (1) ou duplo (2)
-            if (e.Clicks >= 1)
+            if (e.Clicks >= 1 && currentState == ClippyState.Wandering)
             {
-                // A armadilha só é ativada se o personagem estiver a passear
-                if (currentState == ClippyState.Wandering)
-                {
-                    isCursorTrapped = true;
-                    currentState = ClippyState.Exiting;
-                    targetPosition = entryPoint;
-                }
+                isCursorTrapped = true;
+                currentState = ClippyState.Exiting;
+                targetPosition = entryPoint;
             }
         }
 
@@ -122,10 +116,11 @@ namespace WinSystemHelperF
                     break;
                 case ClippyState.Wandering:
                     wanderCount++;
-                    if (wanderCount >= 5)
+                    if (wanderCount >= 6)
                     {
                         currentState = ClippyState.Exiting;
                         targetPosition = entryPoint;
+                        currentState = ClippyState.Hidden;
                     }
                     else
                     {
@@ -133,7 +128,6 @@ namespace WinSystemHelperF
                     }
                     break;
                 case ClippyState.Exiting:
-                    
                     isCursorTrapped = false;
                     currentState = ClippyState.Hidden;
                     this.Visible = false;
@@ -154,13 +148,13 @@ namespace WinSystemHelperF
             {
                 isFacingRight = true;
                 pnlBubble.BackgroundImage = imageRight;
-                picClippy.Left = pnlBubble.Left - picClippy.Width + 160;
+                picClippy.Left = pnlBubble.Left - picClippy.Width + 215;
             }
             else if (dx < -0.1 && isFacingRight)
             {
                 isFacingRight = false;
                 pnlBubble.BackgroundImage = imageLeft;
-                picClippy.Left = pnlBubble.Right - 160;
+                picClippy.Left = pnlBubble.Right - 305;
             }
         }
 
@@ -188,6 +182,11 @@ namespace WinSystemHelperF
                     break;
             }
             currentPosition = entryPoint;
+        }
+
+        private void lblMessage_Click(object sender, EventArgs e)
+        {
+
         }
     }
 }

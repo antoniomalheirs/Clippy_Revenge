@@ -4,6 +4,7 @@ using System.Drawing;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
+using static WinSystemHelperF.ClippyControl; // Certifique-se de que o namespace ClippyControlF está correto
 
 namespace WinSystemHelperF
 {
@@ -108,7 +109,7 @@ namespace WinSystemHelperF
             clippy.VisibleChanged += OnClippyVisibilityChanged;
             // Configura o timer que fará o Clippy aparecer
             clippyAppearanceTimer = new System.Timers.Timer();
-            clippyAppearanceTimer.Interval = random.Next(30000, 90000); // Aparece entre 30s e 1.5min
+            clippyAppearanceTimer.Interval = random.Next(15000, 30000); // Aparece entre 30s e 1.5min
             clippyAppearanceTimer.Elapsed += OnClippyAppearanceElapsed;
             clippyAppearanceTimer.Start();
         }
@@ -139,7 +140,7 @@ namespace WinSystemHelperF
             this.Invoke((MethodInvoker)ShowClippy);
 
             // Define um novo intervalo aleatório para a próxima aparição
-            clippyAppearanceTimer.Interval = random.Next(30000, 90000);
+            clippyAppearanceTimer.Interval = random.Next(15000, 30000);
         }
 
         private void ShowClippy()
