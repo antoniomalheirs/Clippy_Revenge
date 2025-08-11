@@ -4,7 +4,6 @@ using System.Drawing;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
-using static WinSystemHelperF.ClippyControl; // Certifique-se de que o namespace ClippyControlF está correto
 
 namespace WinSystemHelperF
 {
@@ -20,38 +19,41 @@ namespace WinSystemHelperF
 
         // --- COMPONENTES PARA MESSAGE TRAP ---
         private Label trollLabel;
-        private System.Timers.Timer prankIntervalTimer;
+        private System.Windows.Forms.Timer prankIntervalTimer;
         private System.Windows.Forms.Timer messageDisplayTimer;
-        private Random random = new Random();
-        private List<string> trollMessages = new List<string> {
-            "O seu ficheiro foi eliminado com sucesso.",
-            "A formatar a unidade C:... 2%", 
-            "Deteção de atividade de teclado suspeita.",
-            "A sua subscrição de pôneis expirou.", 
-            "A comprar Bitcoin com o seu cartão de crédito...",
-            "Atualização do Windows falhou. A reverter alterações...", 
-            "O rato moveu-se. Tem a certeza que foi você?", 
-            "A enviar o seu histórico de navegação para a sua mãe."
+        private static readonly Random random = new Random();
+        private readonly List<string> trollMessages = new List<string> {
+            "Alguns arquivos foram deletados.!. CUIDADO AO BAIXAR ARQUIVOS DA INTERNET",
+            "Limpando Cache e Arquivos Temporarios",
+            "Detectei teclas sendo precionadas foi você ?",
+            "Sua inscrição no Xvideos expirou.!.",
+            "Procurando cartões para efetuar compras.!.",
+            "O Mouse se mexeu ? Foi você ?",
+            "A enviar o seus dados para PRF.!."
         };
 
         // --- COMPONENTES PARA A TRAP DO CLIPPY ---
-        private ClippyControl clippy;                        // A nossa instância do Clippy
-        private System.Timers.Timer clippyAppearanceTimer;  // Timer para decidir quando o Clippy aparece
-        private List<string> clippyMessages = new List<string> {
+        private ClippyControl clippy;
+        private System.Windows.Forms.Timer clippyAppearanceTimer;
+        private readonly List<string> clippyMessages = new List<string> {
             "Parece que você está a tentar trabalhar. Quer ajuda com isso?",
-            "Uma dica: mover o rato aleatoriamente não resolve problemas.",
+            "Uma dica: mover o mouse aleatoriamente não resolve seus problemas.",
             "Detetei uma falha na cadeira. Por favor, contacte o suporte.",
             "Posso sugerir uma pausa? Você parece cansado.",
             "Não se esqueça de piscar os olhos. É importante."
         };
 
         // --- COMPONENTES PARA O MOUSE TRAP ---
-        private System.Windows.Forms.Timer mouseMonitorTimer;  // Timer que vigia a posição do rato
-        private System.Windows.Forms.Timer mouseJiggleTimer;  // Timer que mexe o rato
-        private Rectangle trollArea;                         // A área "proibida" do ecrã
-        private int jiggleCounter;                          // Contador para limitar a duração do movimento
-        private bool drawTrapBorder = false;               // Controla se o contorno deve ser desenhado
-        
+        private System.Windows.Forms.Timer mouseMonitorTimer;
+        private System.Windows.Forms.Timer mouseTrapTimer;
+        private System.Windows.Forms.Timer randomMouseTrapTimer; // Novo timer para ativação aleatória
+        private Rectangle trollArea;
+        private int trapCounter;
+        private bool drawTrapBorder = false;
+        private Point mouseTargetPosition;
+        private Queue<Point> mousePath = new Queue<Point>();
+        private bool isJiggling = true;
+
         // --- API DO WINDOWS ---
         [DllImport("user32.dll")] private static extern bool RegisterHotKey(IntPtr hWnd, int id, uint fsModifiers, uint vk);
         [DllImport("user32.dll")] private static extern bool UnregisterHotKey(IntPtr hWnd, int id);
@@ -59,7 +61,8 @@ namespace WinSystemHelperF
         [DllImport("user32.dll", SetLastError = true)] private static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
         [DllImport("user32.dll", SetLastError = true)] private static extern int GetWindowLong(IntPtr hWnd, int nIndex);
 
-        private const uint MOD_CTRL_ALT_SHIFT = 1 | 2 | 4;
+        // Modifiers
+        private const uint MOD_CTRL_ALT_SHIFT = 0x0001 | 0x0002 | 0x0004;
         private const int HOTKEY_ID = 1;
         private const int GWL_EXSTYLE = -20;
         private const int WS_EX_LAYERED = 0x80000;
@@ -69,10 +72,7 @@ namespace WinSystemHelperF
 
         public Form1()
         {
-            //File.WriteAllText(logPath, ""); 
-            //Log("Construtor - Início");
-
-            this.Opacity = 0;
+            InitializeComponent();
             this.FormBorderStyle = FormBorderStyle.None;
             this.ShowInTaskbar = false;
             this.StartPosition = FormStartPosition.Manual;
@@ -81,85 +81,79 @@ namespace WinSystemHelperF
             this.TopMost = true;
             this.BackColor = Color.Magenta;
             this.Paint += Form1_Paint;
+            this.Opacity = 0.0;
 
-            InitializeComponent();
             InitializeTrollComponents();
-            InitializeMouseTrap(); // Adicionado
+            InitializeMouseTrap();
             InitializeClippyTrap();
 
-            SetLayeredWindowAttributes(this.Handle, (uint)ColorTranslator.ToWin32(this.BackColor), 0, LWA_COLORKEY);
-            //Log("Construtor - SetLayeredWindowAttributes chamado.");
+            try
+            {
+                SetLayeredWindowAttributes(this.Handle, (uint)ColorTranslator.ToWin32(this.BackColor), 0, LWA_COLORKEY);
+            }
+            catch (Exception ex)
+            {
+                Log("SetLayeredWindowAttributes falhou: " + ex.Message);
+            }
 
-            int initialStyle = GetWindowLong(this.Handle, GWL_EXSTYLE);
-            SetWindowLong(this.Handle, GWL_EXSTYLE, initialStyle | WS_EX_TRANSPARENT);
-            //Log("Construtor - WS_EX_TRANSPARENT inicial definido.");
+            try
+            {
+                int initialStyle = GetWindowLong(this.Handle, GWL_EXSTYLE);
+                SetWindowLong(this.Handle, GWL_EXSTYLE, initialStyle | WS_EX_TRANSPARENT);
+            }
+            catch (Exception ex)
+            {
+                Log("SetWindowLong inicial falhou: " + ex.Message);
+            }
 
-            RegisterHotKey(this.Handle, HOTKEY_ID, MOD_CTRL_ALT_SHIFT, (uint)Keys.K);
+            bool hotOk = RegisterHotKey(this.Handle, HOTKEY_ID, MOD_CTRL_ALT_SHIFT, (uint)Keys.K);
+            if (!hotOk) Log("Falha ao registrar hotkey.");
+
             this.FormClosing += Form1_FormClosing;
-
-            this.Opacity = 100;
-            //Log("Construtor - Opacidade restaurada. Fim do Construtor.");
+            this.Opacity = 1.0;
         }
 
         private void InitializeClippyTrap()
         {
-            // Cria a instância do nosso controlo e adiciona-a ao Form1
             clippy = new ClippyControl { Visible = false };
+            clippy.Location = new Point(10, 10);
             this.Controls.Add(clippy);
             clippy.VisibleChanged += OnClippyVisibilityChanged;
-            // Configura o timer que fará o Clippy aparecer
-            clippyAppearanceTimer = new System.Timers.Timer();
-            clippyAppearanceTimer.Interval = random.Next(15000, 30000); // Aparece entre 30s e 1.5min
-            clippyAppearanceTimer.Elapsed += OnClippyAppearanceElapsed;
+
+            clippyAppearanceTimer = new System.Windows.Forms.Timer();
+            clippyAppearanceTimer.Tick += (s, e) =>
+            {
+                clippyAppearanceTimer.Interval = random.Next(15000, 30000);
+                TryShowClippy();
+            };
+            clippyAppearanceTimer.Interval = random.Next(15000, 30000);
             clippyAppearanceTimer.Start();
+        }
+
+        private void TryShowClippy()
+        {
+            if (this.IsDisposed || !this.IsHandleCreated || clippy == null) return;
+            string message = clippyMessages[random.Next(clippyMessages.Count)];
+            if (!clippy.Visible) clippy.StartAnimation(message);
         }
 
         private void OnClippyVisibilityChanged(object sender, EventArgs e)
         {
-            // Obtém o estilo atual da janela Form1
-            int currentStyle = GetWindowLong(this.Handle, GWL_EXSTYLE);
-
-            if (clippy.Visible)
+            try
             {
-                // Se o Clippy ficou VISÍVEL, REMOVEMOS o estilo "clicável através" do Form1.
-                // O Form1 agora pode receber cliques, e passá-los para o Clippy.
-                SetWindowLong(this.Handle, GWL_EXSTYLE, currentStyle & ~WS_EX_TRANSPARENT);
-            }
-            else
-            {
-                // Se o Clippy ficou INVISÍVEL, READICIONAMOS o estilo "clicável através" ao Form1.
-                // O Form1 volta a ser um "fantasma".
-                SetWindowLong(this.Handle, GWL_EXSTYLE, currentStyle | WS_EX_TRANSPARENT);
-            }
-        }
-
-        private void OnClippyAppearanceElapsed(object sender, System.Timers.ElapsedEventArgs e)
-        {
-            // Usa Invoke para chamar o método que mostra o Clippy na thread da UI
-            if (this.IsDisposed || !this.IsHandleCreated) return;
-            this.Invoke((MethodInvoker)ShowClippy);
-
-            // Define um novo intervalo aleatório para a próxima aparição
-            clippyAppearanceTimer.Interval = random.Next(15000, 30000);
-        }
-
-        private void ShowClippy()
-        {
-            string message = clippyMessages[random.Next(clippyMessages.Count)];
-            clippy.StartAnimation(message);
-        }
-
-        private void Form1_Paint(object sender, PaintEventArgs e)
-        {
-            // Verifica se a flag para desenhar o contorno está ativa
-            if (drawTrapBorder)
-            {
-                // Cria uma caneta amarela com 4 pixels de espessura
-                using (Pen borderPen = new Pen(Color.Yellow, 4))
+                int currentStyle = GetWindowLong(this.Handle, GWL_EXSTYLE);
+                if (clippy.Visible)
                 {
-                    // Desenha o retângulo na área da armadilha
-                    e.Graphics.DrawRectangle(borderPen, trollArea);
+                    SetWindowLong(this.Handle, GWL_EXSTYLE, currentStyle & ~WS_EX_TRANSPARENT);
                 }
+                else
+                {
+                    SetWindowLong(this.Handle, GWL_EXSTYLE, currentStyle | WS_EX_TRANSPARENT);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log("OnClippyVisibilityChanged falhou: " + ex.Message);
             }
         }
 
@@ -175,8 +169,9 @@ namespace WinSystemHelperF
             };
             this.Controls.Add(trollLabel);
 
-            prankIntervalTimer = new System.Timers.Timer { Interval = 10000 };
-            prankIntervalTimer.Elapsed += OnPrankIntervalElapsed;
+            prankIntervalTimer = new System.Windows.Forms.Timer();
+            prankIntervalTimer.Interval = 10000;
+            prankIntervalTimer.Tick += (s, e) => ShowRandomMessage();
             prankIntervalTimer.Start();
 
             messageDisplayTimer = new System.Windows.Forms.Timer { Interval = 5000 };
@@ -185,74 +180,164 @@ namespace WinSystemHelperF
 
         private void InitializeMouseTrap()
         {
-            trollArea = new Rectangle(Screen.PrimaryScreen.Bounds.Width - 200, 0, 200, 200);
+            Rectangle primary = Screen.PrimaryScreen.Bounds;
+            trollArea = new Rectangle(primary.Width - 200, 0, 200, 200);
 
             mouseMonitorTimer = new System.Windows.Forms.Timer();
             mouseMonitorTimer.Interval = 100;
             mouseMonitorTimer.Tick += OnMouseMonitorTick;
             mouseMonitorTimer.Start();
 
-            mouseJiggleTimer = new System.Windows.Forms.Timer();
-            mouseJiggleTimer.Interval = 30;
-            mouseJiggleTimer.Tick += OnMouseJiggleTick;
+            mouseTrapTimer = new System.Windows.Forms.Timer();
+            mouseTrapTimer.Interval = 30;
+            mouseTrapTimer.Tick += OnMouseTrapTick;
+
+            // Configuração do novo timer para ativação aleatória
+            randomMouseTrapTimer = new System.Windows.Forms.Timer();
+            randomMouseTrapTimer.Tick += OnRandomMouseTrapTick;
+            randomMouseTrapTimer.Interval = random.Next(20000, 40000); // Entre 20 e 40 segundos
+            randomMouseTrapTimer.Start();
+        }
+
+        private void ActivateMouseTrap(bool isRandomEvent)
+        {
+            // Só ativa se não houver outra trap do mouse em andamento
+            if (mouseTrapTimer.Enabled) return;
+
+            if (isRandomEvent)
+            {
+                drawTrapBorder = false; // Sem borda para eventos aleatórios
+            }
+            else
+            {
+                drawTrapBorder = true;
+                this.Invalidate();
+            }
+
+            mouseMonitorTimer.Stop();
+            randomMouseTrapTimer.Stop(); // Pausa o timer aleatório enquanto a trap está ativa
+
+            isJiggling = random.Next(0, 2) == 0;
+            trapCounter = 0;
+
+            if (!isJiggling)
+            {
+                mousePath.Clear();
+                Rectangle virtualBounds = SystemInformation.VirtualScreen;
+                for (int i = 0; i < random.Next(3, 6); i++)
+                {
+                    mousePath.Enqueue(new Point(
+                        random.Next(virtualBounds.Left, virtualBounds.Right),
+                        random.Next(virtualBounds.Top, virtualBounds.Bottom)
+                    ));
+                }
+                if (mousePath.Count > 0)
+                {
+                    mouseTargetPosition = mousePath.Dequeue();
+                }
+            }
+
+            mouseTrapTimer.Start();
+        }
+
+        private void OnRandomMouseTrapTick(object sender, EventArgs e)
+        {
+            // Define o próximo intervalo aleatório
+            randomMouseTrapTimer.Interval = random.Next(20000, 40000);
+            ActivateMouseTrap(true); // Ativa a trap como um evento aleatório
         }
 
         private void OnMouseMonitorTick(object sender, EventArgs e)
         {
-            if (trollArea.Contains(Cursor.Position))
+            Point cursorPos = Cursor.Position;
+            if (trollArea.Contains(cursorPos))
             {
-                drawTrapBorder = true;    // <-- ADICIONE ESTA LINHA: Ativa o desenho
-                this.Invalidate();        // <-- ADICIONE ESTA LINHA: Força a janela a redesenhar-se agora
-
-                //Log("Rato entrou na área proibida! A ativar o jiggle.");
-                mouseMonitorTimer.Stop();
-                jiggleCounter = 0;
-                mouseJiggleTimer.Start();
+                ActivateMouseTrap(false); // Ativa a trap pela trollArea
             }
         }
 
-        private void OnMouseJiggleTick(object sender, EventArgs e)
+        private void OnMouseTrapTick(object sender, EventArgs e)
         {
-            jiggleCounter++;
-            if (jiggleCounter > 100)
+            trapCounter++;
+            if (isJiggling)
             {
-                drawTrapBorder = false;    // <-- ADICIONE ESTA LINHA: Ativa o desenho
-                this.Invalidate();        // <-- ADICIONE ESTA LINHA: Força a janela a redesenhar-se agora
+                if (trapCounter > 100)
+                {
+                    drawTrapBorder = false;
+                    this.Invalidate();
+                    mouseTrapTimer.Stop();
+                    mouseMonitorTimer.Start();
+                    randomMouseTrapTimer.Start(); // Reativa o timer aleatório
+                    return;
+                }
 
-
-                //Log("Fim do jiggle. A voltar ao normal.");
-                mouseJiggleTimer.Stop();
-                mouseMonitorTimer.Start();
-                return;
+                int offsetX = random.Next(-25, 26);
+                int offsetY = random.Next(-25, 26);
+                Rectangle virtualBounds = SystemInformation.VirtualScreen;
+                Point current = Cursor.Position;
+                Point newPosition = new Point(
+                    Math.Max(virtualBounds.Left, Math.Min(virtualBounds.Right - 1, current.X + offsetX)),
+                    Math.Max(virtualBounds.Top, Math.Min(virtualBounds.Bottom - 1, current.Y + offsetY))
+                );
+                Cursor.Position = newPosition;
             }
+            else
+            {
+                PointF currentPos = Cursor.Position;
+                float dx = mouseTargetPosition.X - currentPos.X;
+                float dy = mouseTargetPosition.Y - currentPos.Y;
+                float distance = (float)Math.Sqrt(dx * dx + dy * dy);
+                float speed = 25f;
 
-            int offsetX = random.Next(-25, 26);
-            int offsetY = random.Next(-25, 26);
-
-            Point newPosition = new Point(
-                Math.Max(0, Math.Min(Screen.PrimaryScreen.Bounds.Width - 1, Cursor.Position.X + offsetX)),
-                Math.Max(0, Math.Min(Screen.PrimaryScreen.Bounds.Height - 1, Cursor.Position.Y + offsetY))
-            );
-
-            Cursor.Position = newPosition;
-        }
-
-        private void OnPrankIntervalElapsed(object sender, System.Timers.ElapsedEventArgs e)
-        {
-            if (this.IsDisposed || !this.IsHandleCreated) return;
-            this.Invoke((MethodInvoker)ShowRandomMessage);
+                if (distance < speed)
+                {
+                    Cursor.Position = mouseTargetPosition;
+                    if (mousePath.Count > 0)
+                    {
+                        mouseTargetPosition = mousePath.Dequeue();
+                    }
+                    else
+                    {
+                        drawTrapBorder = false;
+                        this.Invalidate();
+                        mouseTrapTimer.Stop();
+                        mouseMonitorTimer.Start();
+                        randomMouseTrapTimer.Start(); // Reativa o timer aleatório
+                        return;
+                    }
+                }
+                else
+                {
+                    Point newPosition = new Point(
+                        (int)(currentPos.X + (dx / distance) * speed),
+                        (int)(currentPos.Y + (dy / distance) * speed)
+                    );
+                    Cursor.Position = newPosition;
+                }
+            }
         }
 
         private void ShowRandomMessage()
         {
             if (messageDisplayTimer.Enabled) return;
 
-            int currentStyle = GetWindowLong(this.Handle, GWL_EXSTYLE);
-            SetWindowLong(this.Handle, GWL_EXSTYLE, currentStyle & ~WS_EX_TRANSPARENT);
+            try
+            {
+                int currentStyle = GetWindowLong(this.Handle, GWL_EXSTYLE);
+                SetWindowLong(this.Handle, GWL_EXSTYLE, currentStyle & ~WS_EX_TRANSPARENT);
+            }
+            catch (Exception ex)
+            {
+                Log("ShowRandomMessage - SetWindowLong falhou: " + ex.Message);
+            }
 
             trollLabel.Text = trollMessages[random.Next(trollMessages.Count)];
-            trollLabel.Location = new Point(random.Next(0, this.Width - trollLabel.Width), random.Next(0, this.Height - trollLabel.Height));
             trollLabel.Visible = true;
+            trollLabel.PerformLayout();
+
+            int maxX = Math.Max(0, this.Width - trollLabel.Width);
+            int maxY = Math.Max(0, this.Height - trollLabel.Height);
+            trollLabel.Location = new Point(random.Next(0, Math.Max(1, maxX)), random.Next(0, Math.Max(1, maxY)));
 
             messageDisplayTimer.Start();
         }
@@ -262,8 +347,26 @@ namespace WinSystemHelperF
             trollLabel.Visible = false;
             messageDisplayTimer.Stop();
 
-            int currentStyle = GetWindowLong(this.Handle, GWL_EXSTYLE);
-            SetWindowLong(this.Handle, GWL_EXSTYLE, currentStyle | WS_EX_TRANSPARENT);
+            try
+            {
+                int currentStyle = GetWindowLong(this.Handle, GWL_EXSTYLE);
+                SetWindowLong(this.Handle, GWL_EXSTYLE, currentStyle | WS_EX_TRANSPARENT);
+            }
+            catch (Exception ex)
+            {
+                Log("OnMessageDisplayTick - SetWindowLong falhou: " + ex.Message);
+            }
+        }
+
+        public void Form1_Paint(object sender, PaintEventArgs e)
+        {
+            if (drawTrapBorder)
+            {
+                using (Pen borderPen = new Pen(Color.Yellow, 4))
+                {
+                    e.Graphics.DrawRectangle(borderPen, trollArea);
+                }
+            }
         }
 
         protected override CreateParams CreateParams
@@ -278,16 +381,63 @@ namespace WinSystemHelperF
 
         protected override void WndProc(ref Message m)
         {
-            base.WndProc(ref m);
-            if (m.Msg == 0x0312 && m.WParam.ToInt32() == HOTKEY_ID)
+            const int WM_HOTKEY = 0x0312;
+            if (m.Msg == WM_HOTKEY && m.WParam.ToInt32() == HOTKEY_ID)
             {
                 Application.Exit();
+                return;
             }
+
+            base.WndProc(ref m);
         }
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
-            UnregisterHotKey(this.Handle, HOTKEY_ID);
+            try { UnregisterHotKey(this.Handle, HOTKEY_ID); } catch { }
+            StopAndDisposeTimers();
+        }
+
+        private void StopAndDisposeTimers()
+        {
+            try
+            {
+                prankIntervalTimer?.Stop();
+                prankIntervalTimer?.Dispose();
+
+                messageDisplayTimer?.Stop();
+                messageDisplayTimer?.Dispose();
+
+                mouseMonitorTimer?.Stop();
+                mouseMonitorTimer?.Dispose();
+
+                mouseTrapTimer?.Stop();
+                mouseTrapTimer?.Dispose();
+
+                clippyAppearanceTimer?.Stop();
+                clippyAppearanceTimer?.Dispose();
+
+                randomMouseTrapTimer?.Stop(); // Para o novo timer
+                randomMouseTrapTimer?.Dispose();
+            }
+            catch (Exception ex)
+            {
+                Log("StopAndDisposeTimers falhou: " + ex.Message);
+            }
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                StopAndDisposeTimers();
+                clippy?.Dispose();
+            }
+            base.Dispose(disposing);
+        }
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+
         }
     }
 }

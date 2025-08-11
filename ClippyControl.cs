@@ -14,7 +14,7 @@ namespace WinSystemHelperF
         private PointF currentPosition;
         private Point targetPosition;
         private Point entryPoint;
-        private float speed = 5f;
+        private float speed = 2.5f;
         private int wanderCount = 0;
         private bool isCursorTrapped = false;
 
@@ -26,62 +26,73 @@ namespace WinSystemHelperF
         {
             InitializeComponent();
 
+            // Configura para melhor desenho e transparência
             this.SetStyle(ControlStyles.UserPaint |
                           ControlStyles.AllPaintingInWmPaint |
                           ControlStyles.OptimizedDoubleBuffer |
                           ControlStyles.SupportsTransparentBackColor,
                           true);
 
-            this.BackColor = Color.Magenta;
-            //this.TransparencyKey = Color.Magenta;
+            this.BackColor = Color.Magenta; // Cor-chave para transparência
 
-            pnlBubble.BackColor = Color.Transparent;
-            picClippy.BackColor = Color.Transparent;
-            lblMessage.BackColor = Color.Transparent;
+            // Ajusta cores dos controles internos para evitar problema no clique
+            pnlBubble.BackColor = Color.LightYellow;
+            picClippy.BackColor = Color.Magenta;
+            lblMessage.BackColor = Color.LightYellow;
 
-            imageRight = this.pnlBubble.BackgroundImage;
+            // Clona imagem para inversão horizontal, usando as imagens já definidas no designer
+            imageRight = picClippy.Image;
             if (imageRight != null)
             {
                 imageLeft = (Image)imageRight.Clone();
                 imageLeft.RotateFlip(RotateFlipType.RotateNoneFlipX);
             }
 
+
             animationTimer.Interval = 30;
             animationTimer.Tick += OnAnimationTick;
 
-            this.MouseDown += OnClippyMouseDown;
-            pnlBubble.MouseDown += OnClippyMouseDown;
-            picClippy.MouseDown += OnClippyMouseDown;
-            lblMessage.MouseDown += OnClippyMouseDown;
+            // Inscreve clique para toda área (inclusive filhos)
+            AddClickHandlers(this);
         }
-
-        public void StartAnimation(string message)
+        private void AddClickHandlers(Control control)
         {
-            if (currentState != ClippyState.Hidden) return;
-            lblMessage.Text = message;
-            PlanNewPath();
-            this.Location = new Point((int)currentPosition.X, (int)currentPosition.Y);
-            this.Visible = true;
-            this.BringToFront();
-            currentState = ClippyState.Entering;
-            animationTimer.Start();
+            control.Click += OnClippyClick;
+            foreach (Control child in control.Controls)
+            {
+                AddClickHandlers(child);
+            }
         }
-
-        private void OnClippyMouseDown(object sender, MouseEventArgs e)
+        private void OnClippyClick(object sender, EventArgs e)
         {
-            if (e.Clicks >= 1 && currentState == ClippyState.Wandering)
+            if (currentState == ClippyState.Wandering)
             {
                 isCursorTrapped = true;
                 currentState = ClippyState.Exiting;
                 targetPosition = entryPoint;
             }
         }
+        public void StartAnimation(string message)
+        {
+            if (currentState != ClippyState.Hidden) return;
 
+            lblMessage.Text = message;
+            PlanNewPath();
+            this.Location = Point.Round(currentPosition);
+            this.Visible = true;
+            this.BringToFront();
+            currentState = ClippyState.Entering;
+            animationTimer.Start();
+        }
         private void OnAnimationTick(object sender, EventArgs e)
         {
             if (isCursorTrapped)
             {
-                ProcessCursorTrap();
+                // Trava o cursor na bolha durante saída
+                Point trapPosition = new Point(
+                    this.Left + pnlBubble.Left + pnlBubble.Width / 2,
+                    this.Top + pnlBubble.Top + pnlBubble.Height / 2);
+                Cursor.Position = trapPosition;
             }
 
             float dx = targetPosition.X - currentPosition.X;
@@ -98,35 +109,35 @@ namespace WinSystemHelperF
             {
                 currentPosition.X += (dx / distance) * speed;
                 currentPosition.Y += (dy / distance) * speed;
+                this.Location = Point.Round(currentPosition);
             }
-
-            this.Location = new Point((int)currentPosition.X, (int)currentPosition.Y);
         }
-
         private void ProcessTargetReached()
         {
             var screen = Screen.FromControl(this.Parent).Bounds;
             currentPosition = targetPosition;
+
             switch (currentState)
             {
                 case ClippyState.Entering:
                     currentState = ClippyState.Wandering;
                     wanderCount = 0;
-                    targetPosition = new Point(random.Next(50, screen.Width - this.Width - 50), random.Next(50, screen.Height - this.Height - 50));
+                    SetRandomWanderTarget(screen);
                     break;
+
                 case ClippyState.Wandering:
                     wanderCount++;
                     if (wanderCount >= 6)
                     {
                         currentState = ClippyState.Exiting;
                         targetPosition = entryPoint;
-                        currentState = ClippyState.Hidden;
                     }
                     else
                     {
-                        targetPosition = new Point(random.Next(50, screen.Width - this.Width - 50), random.Next(50, screen.Height - this.Height - 50));
+                        SetRandomWanderTarget(screen);
                     }
                     break;
+
                 case ClippyState.Exiting:
                     isCursorTrapped = false;
                     currentState = ClippyState.Hidden;
@@ -135,58 +146,70 @@ namespace WinSystemHelperF
                     break;
             }
         }
-
-        private void ProcessCursorTrap()
+        private void SetRandomWanderTarget(Rectangle screen)
         {
-            Cursor.Position = new Point(this.Left + pnlBubble.Left + pnlBubble.Width / 2, this.Top + pnlBubble.Top + pnlBubble.Height / 2);
+            targetPosition = new Point(
+                random.Next(50, screen.Width - this.Width - 50),
+                random.Next(50, screen.Height - this.Height - 50));
         }
-
         private void UpdateSpriteDirection(float dx)
         {
-            if (imageRight == null || imageLeft == null) return;
-            if (dx > 0.1 && !isFacingRight)
+            if (picClippy.Image == null) return;
+
+            if (dx > 0.1f && !isFacingRight)
             {
                 isFacingRight = true;
-                pnlBubble.BackgroundImage = imageRight;
-                picClippy.Left = pnlBubble.Left - picClippy.Width + 215;
+                picClippy.Image = imageRight;
             }
-            else if (dx < -0.1 && isFacingRight)
+            else if (dx < -0.1f && isFacingRight)
             {
                 isFacingRight = false;
-                pnlBubble.BackgroundImage = imageLeft;
-                picClippy.Left = pnlBubble.Right - 305;
+                picClippy.Image = imageLeft;
             }
         }
-
         private void PlanNewPath()
         {
             int edge = random.Next(4);
             var screen = Screen.FromControl(this.Parent).Bounds;
+
             switch (edge)
             {
-                case 0:
+                case 0: // Entrando de cima
                     entryPoint = new Point(random.Next(0, screen.Width - this.Width), -this.Height);
                     targetPosition = new Point(entryPoint.X, 10);
                     break;
-                case 1:
+                case 1: // Entrando pela direita
                     entryPoint = new Point(screen.Width, random.Next(0, screen.Height - this.Height));
                     targetPosition = new Point(screen.Width - this.Width - 10, entryPoint.Y);
                     break;
-                case 2:
+                case 2: // Entrando por baixo
                     entryPoint = new Point(random.Next(0, screen.Width - this.Width), screen.Height);
                     targetPosition = new Point(entryPoint.X, screen.Height - this.Height - 10);
                     break;
-                case 3:
+                case 3: // Entrando pela esquerda
                     entryPoint = new Point(-this.Width, random.Next(0, screen.Height - this.Height));
                     targetPosition = new Point(10, entryPoint.Y);
                     break;
             }
             currentPosition = entryPoint;
         }
-
         private void lblMessage_Click(object sender, EventArgs e)
         {
-
+            if (currentState == ClippyState.Wandering)
+            {
+                isCursorTrapped = true;
+                currentState = ClippyState.Exiting;
+                targetPosition = entryPoint;
+            }
+        }
+        private void picClippy_Click(object sender, EventArgs e)
+        {
+            if (currentState == ClippyState.Wandering)
+            {
+                isCursorTrapped = true;
+                currentState = ClippyState.Exiting;
+                targetPosition = entryPoint;
+            }
         }
     }
 }

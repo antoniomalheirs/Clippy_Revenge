@@ -7,20 +7,20 @@ namespace WinSystemHelperF
         /// <summary>
         /// Variável de designer necessária.
         /// </summary>
-        private System.ComponentModel.IContainer components = null;
+        /*private System.ComponentModel.IContainer components = null;
 
         /// <summary>
         /// Limpar os recursos que estão sendo usados.
         /// </summary>
-        /// <param name="disposing">true se for necessário descartar os recursos gerenciados; caso contrário, false.</param>
-        protected override void Dispose(bool disposing)
+        /*/// <param name="disposing">true se for necessário descartar os recursos gerenciados; caso contrário, false.</param>
+        /*protected override void Dispose(bool disposing)
         {
             if (disposing && (components != null))
             {
                 components.Dispose();
             }
             base.Dispose(disposing);
-        }
+        }*/
 
         #region Código gerado pelo Windows Form Designer
 
@@ -38,26 +38,12 @@ namespace WinSystemHelperF
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.Magenta;
             this.ClientSize = new System.Drawing.Size(1920, 1080);
-            this.ForeColor = System.Drawing.Color.Transparent;
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
             this.Name = "Form1";
             this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
             this.Text = "Form1";
-            this.TopMost = true;
-            this.Load += new System.EventHandler(this.Form1_Load);
             this.ResumeLayout(false);
-
-        }
-
-        private void Form1_Load(object sender, EventArgs e)
-        {
-
-
-
-
-
-
 
         }
 
