@@ -21,3 +21,15 @@ C:\Users\Microsoft\Desktop\Devops\Nova pasta\obj\Debug\WinSystemHelperF.exe
 C:\Users\Microsoft\Desktop\Devops\Nova pasta\obj\Debug\WinSystemHelperF.pdb
 C:\Users\Microsoft\Desktop\Devops\Nova pasta\obj\Debug\WinSystemHelperF.exe.config
 C:\Users\Microsoft\Desktop\Devops\Nova pasta\obj\Debug\WinSystemHelperF.ClippyControl.resources
+F:\Curso Hacking\Devops\Nova pasta\bin\Debug\WinSystemHelperF.exe.config
+F:\Curso Hacking\Devops\Nova pasta\bin\Debug\WinSystemHelperF.exe
+F:\Curso Hacking\Devops\Nova pasta\bin\Debug\WinSystemHelperF.pdb
+F:\Curso Hacking\Devops\Nova pasta\obj\Debug\WinSystemHelperF.csproj.AssemblyReference.cache
+F:\Curso Hacking\Devops\Nova pasta\obj\Debug\WinSystemHelperF.exe.config
+F:\Curso Hacking\Devops\Nova pasta\obj\Debug\WinSystemHelperF.ClippyControl.resources
+F:\Curso Hacking\Devops\Nova pasta\obj\Debug\WinSystemHelperF.Form1.resources
+F:\Curso Hacking\Devops\Nova pasta\obj\Debug\WinSystemHelperF.Properties.Resources.resources
+F:\Curso Hacking\Devops\Nova pasta\obj\Debug\WinSystemHelperF.csproj.GenerateResource.cache
+F:\Curso Hacking\Devops\Nova pasta\obj\Debug\WinSystemHelperF.csproj.CoreCompileInputs.cache
+F:\Curso Hacking\Devops\Nova pasta\obj\Debug\WinSystemHelperF.exe
+F:\Curso Hacking\Devops\Nova pasta\obj\Debug\WinSystemHelperF.pdb

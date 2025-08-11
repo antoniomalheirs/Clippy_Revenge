@@ -14,7 +14,7 @@ namespace WinSystemHelperF
         private PointF currentPosition;
         private Point targetPosition;
         private Point entryPoint;
-        private float speed = 2.5f;
+        private float speed = 3.5f;
         private int wanderCount = 0;
         private bool isCursorTrapped = false;
 
