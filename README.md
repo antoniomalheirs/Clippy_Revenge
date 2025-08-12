@@ -1,4 +1,4 @@
-# Clippy's Revenge 👻
+# Clippy Revenge 👻
 
 [![CSharp](https://img.shields.io/badge/Linguagem-C%23-239120?style=for-the-badge&logo=c-sharp&logoColor=white)](https://docs.microsoft.com/pt-br/dotnet/csharp/)
 [![Plataforma](https://img.shields.io/badge/Plataforma-Windows-0078D6?style=for-the-badge&logo=windows)](https://www.microsoft.com/pt-br/windows)
@@ -6,7 +6,7 @@
 
 **A vingança nunca foi tão... prestativa?**
 
-`Clippy's Revenge` é uma aplicação travessa em C# que se esconde silenciosamente em segundo plano, agindo como um "poltergeist" digital. Ele foi projetado para pregar peças inofensivas, exibindo mensagens aleatórias, controlando o mouse, simulando digitação e, claro, trazendo de volta o nosso querido assistente Clippy para assombrar a tela do usuário.
+`Clippy Revenge` é uma aplicação travessa em C# que se esconde silenciosamente em segundo plano, agindo como um "poltergeist" digital. Ele foi projetado para pregar peças inofensivas, exibindo mensagens aleatórias, controlando o mouse, simulando digitação e, claro, trazendo de volta o nosso querido assistente Clippy para assombrar a tela do usuário.
 
 Construído com WinForms e um toque de magia Win32 (P/Invoke), este projeto é um ótimo exemplo de como interagir com o sistema operacional em um nível mais profundo.
 

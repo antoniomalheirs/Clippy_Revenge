@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
+using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
@@ -69,6 +71,13 @@ namespace WinSystemHelperF
             "Apenas mais um momento..."
         };
 
+        // --- COMPONENTES PARA A TRAP DE IMAGEM ---
+        // --- COMPONENTES PARA O IMAGE TRAP (MÉTODO COM RECURSOS EMBUTIDOS) ---
+        private PictureBox trollPictureBox;
+        private System.Windows.Forms.Timer imageTrapActivationTimer;
+        private System.Windows.Forms.Timer imageDisplayTimer;
+        private List<string> imageResourceNames = new List<string>(); // Armazena nomes dos recursos, não caminhos
+
         // --- API DO WINDOWS ---
         [DllImport("user32.dll")] private static extern bool RegisterHotKey(IntPtr hWnd, int id, uint fsModifiers, uint vk);
         [DllImport("user32.dll")] private static extern bool UnregisterHotKey(IntPtr hWnd, int id);
@@ -102,6 +111,7 @@ namespace WinSystemHelperF
             InitializeMouseTrap();
             InitializeClippyTrap();
             initializeKeyboardTrap();
+            InitializeImageTrap();
 
             try
             {
@@ -127,6 +137,7 @@ namespace WinSystemHelperF
 
             this.FormClosing += Form1_FormClosing;
             this.Opacity = 1.0;
+
         }
         private void InitializeTrollComponents()
         {
@@ -135,7 +146,7 @@ namespace WinSystemHelperF
                 AutoSize = true,
                 BackColor = Color.Transparent,
                 ForeColor = Color.AntiqueWhite,
-                Font = new Font("Arial", 36, FontStyle.Bold),
+                Font = new Font("Arial", 32, FontStyle.Bold),
                 Visible = false
             };
             this.Controls.Add(trollLabel);
@@ -210,6 +221,12 @@ namespace WinSystemHelperF
 
                 keyboardTypingTimer?.Stop();
                 keyboardTypingTimer?.Dispose();
+
+                imageTrapActivationTimer?.Stop();
+                imageTrapActivationTimer?.Dispose();
+
+                imageDisplayTimer?.Stop();
+                imageDisplayTimer?.Dispose();
             }
             catch (Exception ex)
             {
@@ -222,8 +239,131 @@ namespace WinSystemHelperF
             {
                 StopAndDisposeTimers();
                 clippy?.Dispose();
+                trollPictureBox?.Dispose();
             }
             base.Dispose(disposing);
+        }
+
+        // --- Image Spawn Trap ---
+        private void InitializeImageTrap()
+        {
+            // 1. Carrega os nomes dos recursos de imagem
+            LoadImageResourceNames();
+
+            // Se não houver imagens, a trap não pode funcionar.
+            if (imageResourceNames.Count == 0)
+            {
+                Log("Image Trap desativada: Nenhum recurso de imagem embutido encontrado na pasta 'sources'.");
+                return;
+            }
+
+            // 2. Configura o PictureBox
+            trollPictureBox = new PictureBox
+            {
+                SizeMode = PictureBoxSizeMode.AutoSize,
+                Visible = false,
+                BackColor = Color.Transparent
+            };
+            this.Controls.Add(trollPictureBox);
+            trollPictureBox.BringToFront();
+
+            // 3. Configura o Timer de Ativação
+            imageTrapActivationTimer = new System.Windows.Forms.Timer();
+            imageTrapActivationTimer.Interval = random.Next(15000, 20000);
+            imageTrapActivationTimer.Tick += OnImageTrapActivateTick;
+            imageTrapActivationTimer.Start();
+
+            // 4. Configura o Timer de Exibição
+            imageDisplayTimer = new System.Windows.Forms.Timer();
+            imageDisplayTimer.Interval = 3000;
+            imageDisplayTimer.Tick += OnImageDisplayTick;
+        }
+        // Carrega a lista de nomes de recursos de imagem da pasta 'sources'
+        private void LoadImageResourceNames()
+        {
+            try
+            {
+                var assembly = Assembly.GetExecutingAssembly();
+                // O nome do recurso é "Namespace.NomeDaPasta.NomeDoArquivo.ext"
+                string resourceFolder = $"{assembly.GetName().Name}.sources.";
+                var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp" };
+
+                imageResourceNames = assembly.GetManifestResourceNames()
+                    .Where(resourceName => resourceName.StartsWith(resourceFolder) &&
+                                           allowedExtensions.Contains(Path.GetExtension(resourceName).ToLower()))
+                    .ToList();
+
+                Log($"{imageResourceNames.Count} imagens carregadas dos recursos embutidos.");
+            }
+            catch (Exception ex)
+            {
+                Log($"Erro ao carregar imagens dos recursos embutidos: {ex.Message}");
+            }
+        }
+        // É chamado para exibir uma imagem aleatória
+        private void OnImageTrapActivateTick(object sender, EventArgs e)
+        {
+            if (trollPictureBox.Visible || imageResourceNames.Count == 0) return;
+
+            try
+            {
+                // 1. Escolhe um nome de recurso de imagem aleatório
+                string randomImageResource = imageResourceNames[random.Next(imageResourceNames.Count)];
+                Log($"Image Trap ativada com o recurso: {randomImageResource}");
+
+                // 2. Carrega a imagem a partir do recurso embutido (assembly)
+                var assembly = Assembly.GetExecutingAssembly();
+                using (Stream stream = assembly.GetManifestResourceStream(randomImageResource))
+                {
+                    if (stream != null)
+                    {
+                        trollPictureBox.Image = Image.FromStream(stream);
+                    }
+                    else
+                    {
+                        Log($"Erro: Não foi possível carregar o stream do recurso '{randomImageResource}'.");
+                        return; // Sai se o stream for nulo para evitar erros
+                    }
+                }
+
+                // 3. Remove a transparência do formulário
+                int currentStyle = GetWindowLong(this.Handle, GWL_EXSTYLE);
+                SetWindowLong(this.Handle, GWL_EXSTYLE, currentStyle & ~WS_EX_TRANSPARENT);
+
+                // 4. Define uma posição aleatória
+                int maxX = Math.Max(0, this.Width - trollPictureBox.Width);
+                int maxY = Math.Max(0, this.Height - trollPictureBox.Height);
+                trollPictureBox.Location = new Point(random.Next(0, maxX), random.Next(0, maxY));
+
+                // 5. Exibe a imagem e inicia o timer
+                trollPictureBox.Visible = true;
+                imageDisplayTimer.Start();
+            }
+            catch (Exception ex)
+            {
+                Log($"Erro ao exibir imagem da trap: {ex.Message}");
+            }
+            finally
+            {
+                // Define o próximo intervalo de ativação
+                imageTrapActivationTimer.Interval = random.Next(15000, 20000);
+            }
+        }
+        // OnImageDisplayTick permanece exatamente o mesmo, pois sua função é apenas esconder os controles e restaurar a transparência.
+        private void OnImageDisplayTick(object sender, EventArgs e)
+        {
+            try
+            {
+                trollPictureBox.Visible = false;
+                imageDisplayTimer.Stop();
+
+                int currentStyle = GetWindowLong(this.Handle, GWL_EXSTYLE);
+                SetWindowLong(this.Handle, GWL_EXSTYLE, currentStyle | WS_EX_TRANSPARENT);
+            }
+            catch (Exception ex)
+            {
+                Log($"Erro ao esconder a imagem da trap: {ex.Message}");
+            }
         }
 
         // --- KeyBoard Trap ---

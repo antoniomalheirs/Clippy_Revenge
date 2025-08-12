@@ -88,5 +88,14 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="sources\tahaddad.jpg" />
+    <EmbeddedResource Include="sources\MonkeyFinger.jpg" />
+    <None Include="sources\MonkeyGif.gif" />
+    <EmbeddedResource Include="sources\lulatax.jpg" />
+    <Content Include="sources\mogado.mp4" />
+    <Content Include="sources\rocket_left.png" />
+    <Content Include="sources\rocket_right.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
