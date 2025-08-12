@@ -11,6 +11,12 @@
 Construído com WinForms e um toque de magia Win32 (P/Invoke), este projeto é um ótimo exemplo de como interagir com o sistema operacional em um nível mais profundo.
 
 ---
+## 📹 Demonstração
+
+Veja abaixo um vídeo demonstrando a interface e as funcionalidades do projeto:
+
+https://github.com/user-attachments/assets/fb72028f-476a-4e06-90dc-425d01069425
+
 
 ## ✨ Funcionalidades (As Assombrações)
 
